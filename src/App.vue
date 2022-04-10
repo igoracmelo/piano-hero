@@ -2,7 +2,7 @@
   <div class="game">
     <div class="falling-notes">
       <div
-        v-for="key in keys"
+        v-for="(key, i) in keys"
         :key="key.note"
         class="falling-note-placeholder"
         :class="{ sharp: key.sharp }"
@@ -15,12 +15,11 @@
             bottom: (falling.startsAt - currentGameTime) * 50 - 10 + 'px'
           }"
           class="falling-note"
-          :class="{ missed: falling.missed, hitting: falling.hitting }"
-        />
+          :class="classesForFallingNote(i, falling)"
+        >
+          <div />
+        </div>
       </div>
-      <!-- backgroundColor: fallingNotes[key.note].color, -->
-
-      <!-- bottom: fallingNotes[key.note].startsAt * 10 -->
     </div>
     <div
       class="keyboard"
@@ -113,7 +112,10 @@ export default defineComponent({
         FS3: [],
         G3: [],
         GS3: [],
-        A3: []
+        A3: [],
+        AS3: [],
+        B3: [],
+        C4: []
       } as Record<string, FallingNote[]>,
       keyNodes: {
         A1: null,
@@ -140,7 +142,10 @@ export default defineComponent({
         FS3: null,
         G3: null,
         GS3: null,
-        A3: null
+        A3: null,
+        AS3: null,
+        B3: null,
+        C4: null
       } as Record<string, GainNode|null>,
       keys: [
         { active: false, wrong: false, displayedKeymap: 'A', keymap: 'KeyA', note: 'A1', sharp: false, semitones: 0 },
@@ -167,7 +172,10 @@ export default defineComponent({
         { active: false, wrong: false, displayedKeymap: '7', keymap: 'Numpad7', note: 'FS3', sharp: true, semitones: 21 },
         { active: false, wrong: false, displayedKeymap: '4', keymap: 'Numpad4', note: 'G3', sharp: false, semitones: 22 },
         { active: false, wrong: false, displayedKeymap: '8', keymap: 'Numpad8', note: 'GS3', sharp: true, semitones: 23 },
-        { active: false, wrong: false, displayedKeymap: '5', keymap: 'Numpad5', note: 'A3', sharp: false, semitones: 24 }
+        { active: false, wrong: false, displayedKeymap: '5', keymap: 'Numpad5', note: 'A3', sharp: false, semitones: 24 },
+        { active: false, wrong: false, displayedKeymap: '9', keymap: 'Numpad9', note: 'AS3', sharp: true, semitones: 25 },
+        { active: false, wrong: false, displayedKeymap: '6', keymap: 'Numpad6', note: 'B3', sharp: false, semitones: 26 },
+        { active: false, wrong: false, displayedKeymap: '+', keymap: 'NumpadAdd', note: 'C4', sharp: false, semitones: 27 }
       ] as Key[]
     }
   },
@@ -192,7 +200,32 @@ export default defineComponent({
     // this.fallingNotes.G2.push({ duration: 1, startsAt: 5 + begin, hitting: false })
     // this.fallingNotes.A2.push({ duration: 1, startsAt: 6 + begin, hitting: false })
     // this.fallingNotes.B2.push({ duration: 1, startsAt: 7 + begin, hitting: false })
-    // this.fallingNotes.C3.push({ duration: 1, startsAt: 8 + begin, hitting: false })
+    // this.fallingNotes.CS3.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+
+    // this.fallingNotes.C2.push({ duration: 2, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.E2.push({ duration: 2, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.G2.push({ duration: 2, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.B1.push({ duration: 2, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.D2.push({ duration: 2, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.F2.push({ duration: 2, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.A1.push({ duration: 2, startsAt: 5 + begin, hitting: false })
+    // this.fallingNotes.CS2.push({ duration: 2, startsAt: 5 + begin, hitting: false })
+    // this.fallingNotes.E2.push({ duration: 2, startsAt: 5 + begin, hitting: false })
+
+    // this.fallingNotes.C2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.CS2.push({ duration: 1, startsAt: 2 + begin, hitting: false })
+    // this.fallingNotes.D2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.DS2.push({ duration: 1, startsAt: 4 + begin, hitting: false })
+    // this.fallingNotes.E2.push({ duration: 1, startsAt: 5 + begin, hitting: false })
+    // this.fallingNotes.F2.push({ duration: 1, startsAt: 6 + begin, hitting: false })
+    // this.fallingNotes.FS2.push({ duration: 1, startsAt: 7 + begin, hitting: false })
+    // this.fallingNotes.G2.push({ duration: 1, startsAt: 8 + begin, hitting: false })
+    // this.fallingNotes.GS2.push({ duration: 1, startsAt: 9 + begin, hitting: false })
+    // this.fallingNotes.A2.push({ duration: 1, startsAt: 10 + begin, hitting: false })
+    // this.fallingNotes.AS2.push({ duration: 1, startsAt: 11 + begin, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 1, startsAt: 12 + begin, hitting: false })
+    // this.fallingNotes.C3.push({ duration: 1, startsAt: 13 + begin, hitting: false })
+    // this.fallingNotes.CS3.push({ duration: 1, startsAt: 14 + begin, hitting: false })
 
     this.fallingNotes.B2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
     this.fallingNotes.B2.push({ duration: 1, startsAt: 2 + begin, hitting: false })
@@ -204,7 +237,19 @@ export default defineComponent({
     this.fallingNotes.D3.push({ duration: 1, startsAt: 10 + begin, hitting: false })
     this.fallingNotes.G2.push({ duration: 1, startsAt: 11 + begin, hitting: false })
     this.fallingNotes.A2.push({ duration: 1, startsAt: 12 + begin, hitting: false })
-    this.fallingNotes.B2.push({ duration: 2, startsAt: 13 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 4, startsAt: 13 + begin, hitting: false })
+    this.fallingNotes.C3.push({ duration: 1, startsAt: 17 + begin, hitting: false })
+    this.fallingNotes.C3.push({ duration: 1, startsAt: 18 + begin, hitting: false })
+    this.fallingNotes.C3.push({ duration: 2, startsAt: 19 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 21 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 22 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 2, startsAt: 23 + begin, hitting: false })
+    this.fallingNotes.A2.push({ duration: 1, startsAt: 25 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 26 + begin, hitting: false })
+    this.fallingNotes.A2.push({ duration: 1, startsAt: 27 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 28 + begin, hitting: false })
+    this.fallingNotes.A2.push({ duration: 2, startsAt: 29 + begin, hitting: false })
+    this.fallingNotes.D3.push({ duration: 2, startsAt: 31 + begin, hitting: false })
 
     this.audioContext = new AudioContext()
 
@@ -263,6 +308,16 @@ export default defineComponent({
   },
 
   methods: {
+
+    classesForFallingNote (keyIndex: number, fallingNote: FallingNote) {
+      return {
+        // missed: fallingNote.missed,
+        capleft: !this.keys[keyIndex]?.sharp && this.keys[keyIndex - 1]?.sharp && !this.keys[keyIndex + 1]?.sharp,
+        capright: !this.keys[keyIndex]?.sharp && this.keys[keyIndex + 1]?.sharp && !this.keys[keyIndex - 1]?.sharp,
+        capboth: !this.keys[keyIndex]?.sharp && this.keys[keyIndex + 1]?.sharp && this.keys[keyIndex - 1]?.sharp,
+        hitting: fallingNote.hitting
+      }
+    },
     randomColor () {
       return '#' + Math.random().toString(16).slice(2, 8)
     },
@@ -403,19 +458,58 @@ body
   width: $sharp-key-width
   margin-left: calc($sharp-key-width / -2)
   margin-right: calc($sharp-key-width / -2)
-  .falling-note
-    background-color: #f00
 
 .falling-note
   position: absolute
   width: 100%
   bottom: 0
   z-index: 2
-  border-radius: 10px
-  background-color: #5fa
+  display: flex
+  flex-direction: column
+
+  > div
+    border-radius: 10px
+    background-color: #5fa
+    width: 100%
+    height: 100%
 
   &.hitting
-    background-color: #aaf
+    > div
+      background-color: #aaf
+
+  &.capleft
+    align-items: flex-end
+
+    > div
+      $spacing: calc($sharp-key-width / 2)
+      width: calc($key-width - $spacing)
+
+  &.capright
+    align-items: flex-start
+
+    > div
+      $spacing: calc($sharp-key-width / 2)
+      width: calc($key-width - $spacing)
+
+  &.capboth
+    align-items: center
+    > div
+      $spacing: calc($sharp-key-width / 2)
+      width: calc($key-width - $spacing)
+
+  // &.capright
+  //   $spacing: calc($sharp-key-width / 2)
+  //   width: calc($key-width - $spacing)
+  //   left: 0
+
+.sharp .falling-note
+  > div
+    background-color: #3c8
+    width: 100%
+
+  &.hitting
+    > div
+      background-color: #77c
 
 .keyboard
   // position: absolute
