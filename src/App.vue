@@ -11,7 +11,7 @@
           v-for="falling in fallingNotes[key.note]"
           :key="falling"
           :style="{
-            height: 50 * falling.duration + 'px',
+            height: 50 * falling.duration - 5 + 'px',
             bottom: (falling.startsAt - currentGameTime) * 50 - 10 + 'px'
           }"
           class="falling-note"
@@ -34,7 +34,7 @@
           v-for="key in keys"
           :key="key.note"
           class="key"
-          :class="{ sharp: key.sharp, active: key.active }"
+          :class="{ sharp: key.sharp, active: key.active, wrong: key.wrong }"
         >
           {{ key.displayedKeymap }}
         </div>
@@ -55,7 +55,14 @@ type Key = {
   keymap: string,
   note: string,
   sharp: boolean,
+  wrong: boolean,
   semitones: number
+}
+
+type FallingNote = {
+  duration: number,
+  startsAt: number,
+  hitting: boolean
 }
 
 function indexOfMin (arr: number[]): number {
@@ -107,7 +114,7 @@ export default defineComponent({
         G3: [],
         GS3: [],
         A3: []
-      } as Record<string, any[]>,
+      } as Record<string, FallingNote[]>,
       keyNodes: {
         A1: null,
         AS1: null,
@@ -136,45 +143,47 @@ export default defineComponent({
         A3: null
       } as Record<string, GainNode|null>,
       keys: [
-        { active: false, displayedKeymap: 'A', keymap: 'KeyA', note: 'A1', sharp: false, semitones: 0 },
-        { active: false, displayedKeymap: 'W', keymap: 'KeyW', note: 'AS1', sharp: true, semitones: 1 },
-        { active: false, displayedKeymap: 'S', keymap: 'KeyS', note: 'B1', sharp: false, semitones: 2 },
-        { active: false, displayedKeymap: 'D', keymap: 'KeyD', note: 'C2', sharp: false, semitones: 3 },
-        { active: false, displayedKeymap: 'R', keymap: 'KeyR', note: 'CS2', sharp: true, semitones: 4 },
-        { active: false, displayedKeymap: 'F', keymap: 'KeyF', note: 'D2', sharp: false, semitones: 5 },
-        { active: false, displayedKeymap: 'T', keymap: 'KeyT', note: 'DS2', sharp: true, semitones: 6 },
-        { active: false, displayedKeymap: 'G', keymap: 'KeyG', note: 'E2', sharp: false, semitones: 7 },
-        { active: false, displayedKeymap: 'H', keymap: 'KeyH', note: 'F2', sharp: false, semitones: 8 },
-        { active: false, displayedKeymap: 'U', keymap: 'KeyU', note: 'FS2', sharp: true, semitones: 9 },
-        { active: false, displayedKeymap: 'J', keymap: 'KeyJ', note: 'G2', sharp: false, semitones: 10 },
-        { active: false, displayedKeymap: 'I', keymap: 'KeyI', note: 'GS2', sharp: true, semitones: 11 },
-        { active: false, displayedKeymap: 'K', keymap: 'KeyK', note: 'A2', sharp: false, semitones: 12 },
-        { active: false, displayedKeymap: 'O', keymap: 'KeyO', note: 'AS2', sharp: true, semitones: 13 },
-        { active: false, displayedKeymap: 'L', keymap: 'KeyL', note: 'B2', sharp: false, semitones: 14 },
-        { active: false, displayedKeymap: 'Ç', keymap: 'Semicolon', note: 'C3', sharp: false, semitones: 15 },
-        { active: false, displayedKeymap: '´', keymap: 'BracketLeft', note: 'CS3', sharp: true, semitones: 16 },
-        { active: false, displayedKeymap: '~', keymap: 'Quote', note: 'D3', sharp: false, semitones: 17 },
-        { active: false, displayedKeymap: '[', keymap: 'BracketRight', note: 'DS3', sharp: true, semitones: 18 },
-        { active: false, displayedKeymap: ']', keymap: 'Backslash', note: 'E3', sharp: false, semitones: 19 },
-        { active: false, displayedKeymap: 'Enter', keymap: 'Enter', note: 'F3', sharp: false, semitones: 20 },
-        { active: false, displayedKeymap: '7', keymap: 'Numpad7', note: 'FS3', sharp: true, semitones: 21 },
-        { active: false, displayedKeymap: '4', keymap: 'Numpad4', note: 'G3', sharp: false, semitones: 22 },
-        { active: false, displayedKeymap: '8', keymap: 'Numpad8', note: 'GS3', sharp: true, semitones: 23 },
-        { active: false, displayedKeymap: '5', keymap: 'Numpad5', note: 'A3', sharp: false, semitones: 24 }
+        { active: false, wrong: false, displayedKeymap: 'A', keymap: 'KeyA', note: 'A1', sharp: false, semitones: 0 },
+        { active: false, wrong: false, displayedKeymap: 'W', keymap: 'KeyW', note: 'AS1', sharp: true, semitones: 1 },
+        { active: false, wrong: false, displayedKeymap: 'S', keymap: 'KeyS', note: 'B1', sharp: false, semitones: 2 },
+        { active: false, wrong: false, displayedKeymap: 'D', keymap: 'KeyD', note: 'C2', sharp: false, semitones: 3 },
+        { active: false, wrong: false, displayedKeymap: 'R', keymap: 'KeyR', note: 'CS2', sharp: true, semitones: 4 },
+        { active: false, wrong: false, displayedKeymap: 'F', keymap: 'KeyF', note: 'D2', sharp: false, semitones: 5 },
+        { active: false, wrong: false, displayedKeymap: 'T', keymap: 'KeyT', note: 'DS2', sharp: true, semitones: 6 },
+        { active: false, wrong: false, displayedKeymap: 'G', keymap: 'KeyG', note: 'E2', sharp: false, semitones: 7 },
+        { active: false, wrong: false, displayedKeymap: 'H', keymap: 'KeyH', note: 'F2', sharp: false, semitones: 8 },
+        { active: false, wrong: false, displayedKeymap: 'U', keymap: 'KeyU', note: 'FS2', sharp: true, semitones: 9 },
+        { active: false, wrong: false, displayedKeymap: 'J', keymap: 'KeyJ', note: 'G2', sharp: false, semitones: 10 },
+        { active: false, wrong: false, displayedKeymap: 'I', keymap: 'KeyI', note: 'GS2', sharp: true, semitones: 11 },
+        { active: false, wrong: false, displayedKeymap: 'K', keymap: 'KeyK', note: 'A2', sharp: false, semitones: 12 },
+        { active: false, wrong: false, displayedKeymap: 'O', keymap: 'KeyO', note: 'AS2', sharp: true, semitones: 13 },
+        { active: false, wrong: false, displayedKeymap: 'L', keymap: 'KeyL', note: 'B2', sharp: false, semitones: 14 },
+        { active: false, wrong: false, displayedKeymap: 'Ç', keymap: 'Semicolon', note: 'C3', sharp: false, semitones: 15 },
+        { active: false, wrong: false, displayedKeymap: '´', keymap: 'BracketLeft', note: 'CS3', sharp: true, semitones: 16 },
+        { active: false, wrong: false, displayedKeymap: '~', keymap: 'Quote', note: 'D3', sharp: false, semitones: 17 },
+        { active: false, wrong: false, displayedKeymap: '[', keymap: 'BracketRight', note: 'DS3', sharp: true, semitones: 18 },
+        { active: false, wrong: false, displayedKeymap: ']', keymap: 'Backslash', note: 'E3', sharp: false, semitones: 19 },
+        { active: false, wrong: false, displayedKeymap: 'Enter', keymap: 'Enter', note: 'F3', sharp: false, semitones: 20 },
+        { active: false, wrong: false, displayedKeymap: '7', keymap: 'Numpad7', note: 'FS3', sharp: true, semitones: 21 },
+        { active: false, wrong: false, displayedKeymap: '4', keymap: 'Numpad4', note: 'G3', sharp: false, semitones: 22 },
+        { active: false, wrong: false, displayedKeymap: '8', keymap: 'Numpad8', note: 'GS3', sharp: true, semitones: 23 },
+        { active: false, wrong: false, displayedKeymap: '5', keymap: 'Numpad5', note: 'A3', sharp: false, semitones: 24 }
       ] as Key[]
     }
   },
 
   created () {
     // setInterval(() => { this.fallingNotes.C2.startsAt -= 0.05 }, 10)
-    const barDuration = 10
-    setInterval(() => { this.currentGameTime += 1 / 30 }, 10)
+    // const barDuration = 10
+    const beatsPerSecond = 2
+    // setInterval(() => { this.playBeat() }, 1 / beatsPerSecond * 1000)
+    setInterval(() => { this.currentGameTime += beatsPerSecond / 100 }, 1000 / 100)
 
     const begin = 3
-    this.fallingNotes.C2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
-    this.fallingNotes.E2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
-    this.fallingNotes.C2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
-    this.fallingNotes.E2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.C2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.E2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.C2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.E2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
 
     // this.fallingNotes.C2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
     // this.fallingNotes.D2.push({ duration: 1, startsAt: 2 + begin, hitting: false })
@@ -185,12 +194,17 @@ export default defineComponent({
     // this.fallingNotes.B2.push({ duration: 1, startsAt: 7 + begin, hitting: false })
     // this.fallingNotes.C3.push({ duration: 1, startsAt: 8 + begin, hitting: false })
 
-    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 1, hitting: false })
-    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 2, hitting: false })
-    // this.fallingNotes.B2.push({ duration: 1.9, startsAt: 3, hitting: false })
-    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 5, hitting: false })
-    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 6, hitting: false })
-    // this.fallingNotes.B2.push({ duration: 1.9, startsAt: 7, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 2 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 2, startsAt: 3 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 5 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 6 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 2, startsAt: 7 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 1, startsAt: 9 + begin, hitting: false })
+    this.fallingNotes.D3.push({ duration: 1, startsAt: 10 + begin, hitting: false })
+    this.fallingNotes.G2.push({ duration: 1, startsAt: 11 + begin, hitting: false })
+    this.fallingNotes.A2.push({ duration: 1, startsAt: 12 + begin, hitting: false })
+    this.fallingNotes.B2.push({ duration: 2, startsAt: 13 + begin, hitting: false })
 
     this.audioContext = new AudioContext()
 
@@ -218,16 +232,21 @@ export default defineComponent({
 
       if (key && !this.isPlaying(key)) {
         key.active = true
-        const tolerance = 2
+        const tolerance = 0.5
         const fallingNotes = this.fallingNotes[key.note]
         // .filter(({ hitting }) => !hitting)
-        const starts = fallingNotes.map(({ startsAt }) => startsAt)
-        const index = indexOfMin(starts)
+        const delays = fallingNotes.map(({ startsAt }) => Math.abs(startsAt - this.currentGameTime))
+        const index = indexOfMin(delays)
         const fallingNote = fallingNotes[index]
-        if (fallingNote && !fallingNote.hitting && Math.abs(fallingNote.startsAt - this.currentGameTime) < tolerance) {
+        // const timeDelay = Math.abs(fallingNote.startsAt - this.currentGameTime)
+        if (fallingNote && !fallingNote.hitting && delays[index] < tolerance) {
           fallingNote.hitting = true
+          key.wrong = false
+          // console.log(fallingNote.startsAt)
           // if (Math.abs(fallingNote.startsAt - this.currentGameTime) < tolerance) {
           // }
+        } else {
+          key.wrong = true
         }
         this.play(key)
       }
@@ -246,6 +265,27 @@ export default defineComponent({
   methods: {
     randomColor () {
       return '#' + Math.random().toString(16).slice(2, 8)
+    },
+
+    playBeat () {
+      if (!this.audioContext || !this.gainControl) return
+
+      const beatGain = this.audioContext.createGain()
+      beatGain.connect(this.gainControl)
+
+      const beatOscillator = this.audioContext.createOscillator()
+      beatOscillator.connect(beatGain)
+      beatOscillator.frequency.value = 5000
+
+      const now = this.audioContext.currentTime
+      const attackTime = 0.1
+      const releaseTime = 0.1
+
+      // beatOscillator
+      beatOscillator.start()
+      beatGain.gain.setValueAtTime(0, 0)
+      beatGain.gain.linearRampToValueAtTime(1, now + attackTime)
+      beatGain.gain.linearRampToValueAtTime(0, now + attackTime + releaseTime)
     },
 
     isPlaying (key: Key): boolean {
@@ -319,10 +359,14 @@ export default defineComponent({
 $key-width: 50px
 $sharp-key-width: 30px
 $game-bg: #5af
+
 *
   padding: 0
   margin: 0
   box-sizing: border-box
+
+body
+  overflow: hidden
 
 #app
   font-family: Avenir, Helvetica, Arial, sans-serif
@@ -345,16 +389,16 @@ $game-bg: #5af
 .falling-notes
   display: flex
   width: 100%
-  // flex: 1
+  flex: 1
   height: 300px
 
 .falling-note-placeholder
-  background: #0003
   width: $key-width
   height: 100%
   position: relative
 
 .falling-note-placeholder.sharp
+  background: #0003
   z-index: 1
   width: $sharp-key-width
   margin-left: calc($sharp-key-width / -2)
@@ -399,6 +443,9 @@ $game-bg: #5af
   &.active
     background-color: #ccf
 
+  &.active.wrong
+    background-color: #fcc
+
 .key.sharp
   box-shadow: none
   z-index: 5
@@ -412,10 +459,13 @@ $game-bg: #5af
   &.active
     background-color: #55a
 
+  &.active.wrong
+    background-color: #a55
+
 .below-keyboard
   position: relative
-  flex: 1
-  // height: 100%
+  // flex: 1
+  height: 100px
   width: 100%
 
   > div
