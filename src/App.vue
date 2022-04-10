@@ -1,33 +1,41 @@
 <template>
-  <div
-    ref="keyboard"
-    class="keyboard"
-  >
-    <div
-      v-for="i in 1"
-      :key="i"
-      class="keys"
-    >
+  <div>
+    <div class="falling-notes">
       <div
         v-for="key in keys"
         :key="key.note"
-        class="key"
-        :class="{ sharp: key.sharp, active: key.active }"
+        class="falling-note-placeholder"
+        :class="{ sharp: key.sharp }"
       >
-        {{ key.displayedKeymap }}
+        <div
+          v-if="fallingNotes[key.note]"
+          :style="{
+            backgroundColor: fallingNotes[key.note].color,
+            height: 50 * fallingNotes[key.note].duration + 'px',
+            bottom: fallingNotes[key.note].startsAt * 50 + 'px'
+          }"
+          class="falling-note"
+        />
       </div>
-      <!-- <div class="key">A</div>
-      <div class="key sharp">Q</div>
-      <div class="key"></div>
-      <div class="key sharp"></div>
-      <div class="key"></div>
-      <div class="key"></div>
-      <div class="key sharp"></div>
-      <div class="key"></div>
-      <div class="key sharp"></div>
-      <div class="key"></div>
-      <div class="key sharp"></div>
-      <div class="key"></div> -->
+      <!-- bottom: fallingNotes[key.note].startsAt * 10 -->
+    </div>
+    <div
+      class="keyboard"
+    >
+      <div
+        v-for="i in 1"
+        :key="i"
+        class="keys"
+      >
+        <div
+          v-for="key in keys"
+          :key="key.note"
+          class="key"
+          :class="{ sharp: key.sharp, active: key.active }"
+        >
+          {{ key.displayedKeymap }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -52,6 +60,29 @@ export default defineComponent({
       audioContext: null as AudioContext | null,
       gainControl: null as GainNode | null,
       currentOctave: 2,
+      fallingNotes: {
+        A1: null,
+        AS1: null,
+        B1: null,
+        C2: { duration: 2, color: this.randomColor(), startsAt: 5 },
+        CS2: null,
+        D2: null,
+        DS2: null,
+        E2: null,
+        F2: null,
+        FS2: null,
+        G2: null,
+        GS2: null,
+        A2: null,
+        AS2: null,
+        B2: null,
+        C3: null,
+        CS3: null,
+        D3: null,
+        DS3: null,
+        E3: null,
+        F3: null
+      },
       keyNodes: {
         A1: null,
         AS1: null,
@@ -110,6 +141,7 @@ export default defineComponent({
   },
 
   created () {
+    setInterval(() => { this.fallingNotes.C2.startsAt -= 0.5 }, 200)
     this.audioContext = new AudioContext()
 
     const audioBuffer = this.audioContext.createBuffer(1, 0.3 * this.audioContext.sampleRate, this.audioContext.sampleRate)
@@ -165,6 +197,10 @@ export default defineComponent({
     //   return fadeOut
     // },
 
+    randomColor () {
+      return '#' + Math.random().toString(16).slice(2, 8)
+    },
+
     isPlaying (key: Key): boolean {
       return !!this.keyNodes[key.note]
     },
@@ -181,26 +217,67 @@ export default defineComponent({
       // fadeOut.gain.exponentialRampToValueAtTime(0.001, startFadeAt + 0.5)
 
       const oscillator = this.audioContext.createOscillator()
+      oscillator.type = 'sine'
       oscillator.connect(fadeOut)
 
+      const gain2 = this.audioContext.createGain()
+      gain2.gain.setValueAtTime(0.5, 0)
+
+      const oscillator2 = this.audioContext.createOscillator()
+      oscillator2.type = 'triangle'
+      oscillator2.connect(gain2)
+      gain2.connect(fadeOut)
+      // oscillator2.connect(fadeOut)
+
+      const vibrato = this.audioContext.createOscillator()
+      vibrato.frequency.setValueAtTime(4, 0)
+
+      const vibratoGain = this.audioContext.createGain()
+      vibratoGain.gain.setValueAtTime(2, 0)
+
+      vibrato.connect(vibratoGain)
+      vibratoGain.connect(oscillator.frequency)
+      vibratoGain.connect(oscillator2.frequency)
+      vibrato.start()
+
       this.keyNodes[key.note] = fadeOut
+
+      // const attackTime = 0.02
+      const attackTime = 0.01
+      const decayTime = 0.01
+      const sustainTime = 0.5
+      const releaseTime = 1
 
       const semitoneFactor = 2.0 ** (1 / 12)
       const firstNote = 440.0 * (2 ** (this.currentOctave - 2))
       const frequency = firstNote * semitoneFactor ** key.semitones
 
       oscillator.frequency.value = frequency
-      // oscillator.connect(this.gainControl)
+      oscillator2.frequency.value = frequency
+
+      const now = this.audioContext.currentTime
+      fadeOut.gain.setValueAtTime(0.1, 0)
+      fadeOut.gain.linearRampToValueAtTime(1.5, now + attackTime)
+      fadeOut.gain.linearRampToValueAtTime(0.7, now + attackTime + decayTime)
+      fadeOut.gain.linearRampToValueAtTime(0.2, now + attackTime + decayTime + sustainTime)
+      fadeOut.gain.linearRampToValueAtTime(0, now + attackTime + decayTime + sustainTime + releaseTime)
       oscillator.start()
+      oscillator2.start()
     },
 
     stop (key: Key) {
       const fadeOut = this.keyNodes[key.note]
       if (!this.audioContext || !this.gainControl || !fadeOut) return
 
-      const stopAt = this.audioContext.currentTime + 1
+      // const now = this.audioContext.currentTime
+      // const release1 = 0.7
+      // const release2 = 0.7
       // fadeOut.gain.setValueAtTime(1, 0)
-      fadeOut.gain.exponentialRampToValueAtTime(0.001, stopAt)
+
+      // if (fadeOut.gain.value > 0.2) {
+      // fadeOut.gain.linearRampToValueAtTime(0.2, now + release1)
+      // }
+      // fadeOut.gain.linearRampToValueAtTime(0, now + release1 + release2)
 
       this.keyNodes[key.note] = null
       // const fadeOut = this.createFadeOut(stopAt)
@@ -217,6 +294,7 @@ export default defineComponent({
 
 <style lang="sass">
 $key-width: 50px
+$sharp-key-width: 30px
 
 *
   padding: 0
@@ -230,14 +308,48 @@ $key-width: 50px
   text-align: center
   color: #2c3e50
   // margin-top: 60px
-  padding: 10px
-  display: grid
-  place-items: center
+  // padding: 10px
+  // display: grid
+  // place-items: center
   width: 100%
   height: 100vh
-  // flex-direction: column
-  // align-items: center
+  display: flex
+  flex-direction: column
+  // gap: 20px
+  align-items: center
   background: #5af
+
+.falling-notes
+  display: flex
+  width: 100%
+  flex: 1
+  // background: yellow
+  height: 300px
+
+.falling-note-placeholder
+  background: #0003
+  width: $key-width
+  height: 100%
+  position: relative
+
+  // border: 1px solid #0003
+  // margin: -1px
+
+.falling-note-placeholder.sharp
+  z-index: 1
+  width: $sharp-key-width
+  margin-left: calc($sharp-key-width / -2)
+  margin-right: calc($sharp-key-width / -2)
+
+.falling-note
+  position: absolute
+  // background: red
+  // top: 100px
+  width: 100%
+  // height: 50px
+  bottom: 0
+  z-index: 5
+  border-radius: 10px
 
 .keyboard
   display: flex
@@ -246,7 +358,7 @@ $key-width: 50px
   // width: 20vw
   // width: 300px
   height: 300px
-  padding: 20px
+  // padding: 20px
   border-radius: 10px
   // background: #5af
 
@@ -271,11 +383,10 @@ $key-width: 50px
 .key.sharp
   box-shadow: none
   z-index: 1
-  $width: calc($key-width - 20px)
-  width: calc($width)
+  width: $sharp-key-width
   height: 70%
-  margin-left: calc($width / -2)
-  margin-right: calc($width / -2)
+  margin-left: calc($sharp-key-width / -2)
+  margin-right: calc($sharp-key-width / -2)
   background-color: #222
   color: white
 
