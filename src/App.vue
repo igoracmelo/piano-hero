@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="game">
     <div class="falling-notes">
       <div
         v-for="key in keys"
@@ -8,15 +8,18 @@
         :class="{ sharp: key.sharp }"
       >
         <div
-          v-if="fallingNotes[key.note]"
+          v-for="falling in fallingNotes[key.note]"
+          :key="falling"
           :style="{
-            backgroundColor: fallingNotes[key.note].color,
-            height: 50 * fallingNotes[key.note].duration + 'px',
-            bottom: fallingNotes[key.note].startsAt * 50 + 'px'
+            height: 50 * falling.duration + 'px',
+            bottom: (falling.startsAt - currentGameTime) * 50 - 10 + 'px'
           }"
           class="falling-note"
+          :class="{ missed: falling.missed, hitting: falling.hitting }"
         />
       </div>
+      <!-- backgroundColor: fallingNotes[key.note].color, -->
+
       <!-- bottom: fallingNotes[key.note].startsAt * 10 -->
     </div>
     <div
@@ -37,6 +40,9 @@
         </div>
       </div>
     </div>
+    <div class="below-keyboard">
+      <div />
+    </div>
   </div>
 </template>
 
@@ -52,6 +58,20 @@ type Key = {
   semitones: number
 }
 
+function indexOfMin (arr: number[]): number {
+  let min = Infinity
+  let minIndex = 0
+
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] < min) {
+      min = arr[i]
+      minIndex = i
+    }
+  }
+
+  return minIndex
+}
+
 export default defineComponent({
   name: 'App',
 
@@ -60,29 +80,34 @@ export default defineComponent({
       audioContext: null as AudioContext | null,
       gainControl: null as GainNode | null,
       currentOctave: 2,
+      currentGameTime: 0,
       fallingNotes: {
-        A1: null,
-        AS1: null,
-        B1: null,
-        C2: { duration: 2, color: this.randomColor(), startsAt: 5 },
-        CS2: null,
-        D2: null,
-        DS2: null,
-        E2: null,
-        F2: null,
-        FS2: null,
-        G2: null,
-        GS2: null,
-        A2: null,
-        AS2: null,
-        B2: null,
-        C3: null,
-        CS3: null,
-        D3: null,
-        DS3: null,
-        E3: null,
-        F3: null
-      },
+        A1: [],
+        AS1: [],
+        B1: [],
+        C2: [],
+        CS2: [],
+        D2: [],
+        DS2: [],
+        E2: [],
+        F2: [],
+        FS2: [],
+        G2: [],
+        GS2: [],
+        A2: [],
+        AS2: [],
+        B2: [],
+        C3: [],
+        CS3: [],
+        D3: [],
+        DS3: [],
+        E3: [],
+        F3: [],
+        FS3: [],
+        G3: [],
+        GS3: [],
+        A3: []
+      } as Record<string, any[]>,
       keyNodes: {
         A1: null,
         AS1: null,
@@ -104,7 +129,11 @@ export default defineComponent({
         D3: null,
         DS3: null,
         E3: null,
-        F3: null
+        F3: null,
+        FS3: null,
+        G3: null,
+        GS3: null,
+        A3: null
       } as Record<string, GainNode|null>,
       keys: [
         { active: false, displayedKeymap: 'A', keymap: 'KeyA', note: 'A1', sharp: false, semitones: 0 },
@@ -132,16 +161,37 @@ export default defineComponent({
         { active: false, displayedKeymap: '4', keymap: 'Numpad4', note: 'G3', sharp: false, semitones: 22 },
         { active: false, displayedKeymap: '8', keymap: 'Numpad8', note: 'GS3', sharp: true, semitones: 23 },
         { active: false, displayedKeymap: '5', keymap: 'Numpad5', note: 'A3', sharp: false, semitones: 24 }
-        //
-        // App.vue?47b3:104
-        // App.vue?47b3:104
-        // App.vue?47b3:104
       ] as Key[]
     }
   },
 
   created () {
-    setInterval(() => { this.fallingNotes.C2.startsAt -= 0.5 }, 200)
+    // setInterval(() => { this.fallingNotes.C2.startsAt -= 0.05 }, 10)
+    const barDuration = 10
+    setInterval(() => { this.currentGameTime += 1 / 30 }, 10)
+
+    const begin = 3
+    this.fallingNotes.C2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    this.fallingNotes.E2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    this.fallingNotes.C2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
+    this.fallingNotes.E2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
+
+    // this.fallingNotes.C2.push({ duration: 1, startsAt: 1 + begin, hitting: false })
+    // this.fallingNotes.D2.push({ duration: 1, startsAt: 2 + begin, hitting: false })
+    // this.fallingNotes.E2.push({ duration: 1, startsAt: 3 + begin, hitting: false })
+    // this.fallingNotes.F2.push({ duration: 1, startsAt: 4 + begin, hitting: false })
+    // this.fallingNotes.G2.push({ duration: 1, startsAt: 5 + begin, hitting: false })
+    // this.fallingNotes.A2.push({ duration: 1, startsAt: 6 + begin, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 1, startsAt: 7 + begin, hitting: false })
+    // this.fallingNotes.C3.push({ duration: 1, startsAt: 8 + begin, hitting: false })
+
+    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 1, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 2, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 1.9, startsAt: 3, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 5, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 0.9, startsAt: 6, hitting: false })
+    // this.fallingNotes.B2.push({ duration: 1.9, startsAt: 7, hitting: false })
+
     this.audioContext = new AudioContext()
 
     const audioBuffer = this.audioContext.createBuffer(1, 0.3 * this.audioContext.sampleRate, this.audioContext.sampleRate)
@@ -168,11 +218,18 @@ export default defineComponent({
 
       if (key && !this.isPlaying(key)) {
         key.active = true
+        const tolerance = 2
+        const fallingNotes = this.fallingNotes[key.note]
+        // .filter(({ hitting }) => !hitting)
+        const starts = fallingNotes.map(({ startsAt }) => startsAt)
+        const index = indexOfMin(starts)
+        const fallingNote = fallingNotes[index]
+        if (fallingNote && !fallingNote.hitting && Math.abs(fallingNote.startsAt - this.currentGameTime) < tolerance) {
+          fallingNote.hitting = true
+          // if (Math.abs(fallingNote.startsAt - this.currentGameTime) < tolerance) {
+          // }
+        }
         this.play(key)
-        // const audioSource = this.audioContext.createBufferSource()
-        // audioSource.buffer = audioBuffer
-        // audioSource.connect(gain)
-        // audioSource.start()
       }
     })
 
@@ -187,16 +244,6 @@ export default defineComponent({
   },
 
   methods: {
-
-    // createFadeOut (duration?: number): GainNode {
-    //   if (!this.audioContext) throw new Error()
-
-    //   const fadeOut = this.audioContext.createGain()
-    //   // fadeOut.gain.setValueAtTime(1, 0)
-
-    //   return fadeOut
-    // },
-
     randomColor () {
       return '#' + Math.random().toString(16).slice(2, 8)
     },
@@ -211,11 +258,6 @@ export default defineComponent({
       const fadeOut = this.audioContext.createGain()
       fadeOut.connect(this.gainControl)
 
-      // const startFadeAt = this.audioContext.currentTime + 10
-      // setTimeout(() => this.stop(key), startFadeAt)
-      // fadeOut.gain.setValueAtTime(1, startFadeAt)
-      // fadeOut.gain.exponentialRampToValueAtTime(0.001, startFadeAt + 0.5)
-
       const oscillator = this.audioContext.createOscillator()
       oscillator.type = 'sine'
       oscillator.connect(fadeOut)
@@ -227,7 +269,6 @@ export default defineComponent({
       oscillator2.type = 'triangle'
       oscillator2.connect(gain2)
       gain2.connect(fadeOut)
-      // oscillator2.connect(fadeOut)
 
       const vibrato = this.audioContext.createOscillator()
       vibrato.frequency.setValueAtTime(4, 0)
@@ -242,7 +283,6 @@ export default defineComponent({
 
       this.keyNodes[key.note] = fadeOut
 
-      // const attackTime = 0.02
       const attackTime = 0.01
       const decayTime = 0.01
       const sustainTime = 0.5
@@ -269,24 +309,7 @@ export default defineComponent({
       const fadeOut = this.keyNodes[key.note]
       if (!this.audioContext || !this.gainControl || !fadeOut) return
 
-      // const now = this.audioContext.currentTime
-      // const release1 = 0.7
-      // const release2 = 0.7
-      // fadeOut.gain.setValueAtTime(1, 0)
-
-      // if (fadeOut.gain.value > 0.2) {
-      // fadeOut.gain.linearRampToValueAtTime(0.2, now + release1)
-      // }
-      // fadeOut.gain.linearRampToValueAtTime(0, now + release1 + release2)
-
       this.keyNodes[key.note] = null
-      // const fadeOut = this.createFadeOut(stopAt)
-      // oscillator.connect(fadeOut)
-      // oscillator.stop(stopAt)
-    },
-
-    playSnare () {
-      //
     }
   }
 })
@@ -295,7 +318,7 @@ export default defineComponent({
 <style lang="sass">
 $key-width: 50px
 $sharp-key-width: 30px
-
+$game-bg: #5af
 *
   padding: 0
   margin: 0
@@ -307,23 +330,22 @@ $sharp-key-width: 30px
   -moz-osx-font-smoothing: grayscale
   text-align: center
   color: #2c3e50
-  // margin-top: 60px
-  // padding: 10px
-  // display: grid
-  // place-items: center
   width: 100%
   height: 100vh
   display: flex
   flex-direction: column
-  // gap: 20px
   align-items: center
-  background: #5af
+  background: $game-bg
+
+.game
+  display: flex
+  flex-direction: column
+  height: 100vh
 
 .falling-notes
   display: flex
   width: 100%
-  flex: 1
-  // background: yellow
+  // flex: 1
   height: 300px
 
 .falling-note-placeholder
@@ -332,40 +354,37 @@ $sharp-key-width: 30px
   height: 100%
   position: relative
 
-  // border: 1px solid #0003
-  // margin: -1px
-
 .falling-note-placeholder.sharp
   z-index: 1
   width: $sharp-key-width
   margin-left: calc($sharp-key-width / -2)
   margin-right: calc($sharp-key-width / -2)
+  .falling-note
+    background-color: #f00
 
 .falling-note
   position: absolute
-  // background: red
-  // top: 100px
   width: 100%
-  // height: 50px
   bottom: 0
-  z-index: 5
+  z-index: 2
   border-radius: 10px
+  background-color: #5fa
+
+  &.hitting
+    background-color: #aaf
 
 .keyboard
+  // position: absolute
   display: flex
   justify-content: flex-start
-  // gap: 2px
-  // width: 20vw
-  // width: 300px
   height: 300px
-  // padding: 20px
   border-radius: 10px
-  // background: #5af
 
 .keys
   display: flex
 
 .key
+  z-index: 4
   background-color: white
   width: $key-width
   height: 100%
@@ -382,7 +401,7 @@ $sharp-key-width: 30px
 
 .key.sharp
   box-shadow: none
-  z-index: 1
+  z-index: 5
   width: $sharp-key-width
   height: 70%
   margin-left: calc($sharp-key-width / -2)
@@ -392,5 +411,18 @@ $sharp-key-width: 30px
 
   &.active
     background-color: #55a
+
+.below-keyboard
+  position: relative
+  flex: 1
+  // height: 100%
+  width: 100%
+
+  > div
+    z-index: 3
+    position: absolute
+    height: 100%
+    width: 100%
+    background-color: $game-bg
 
 </style>
