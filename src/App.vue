@@ -147,8 +147,6 @@ export default defineComponent({
     window.addEventListener('keyup', (e) => {
       const key = this.keys.find(key => key.keymap === e.code)
 
-      console.log(e.code)
-
       if (key && this.isPlaying(key)) {
         key.active = false
         this.stop(key)
