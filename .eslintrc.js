@@ -4,7 +4,9 @@ module.exports = {
     node: true
   },
   extends: [
-    'plugin:vue/vue3-essential',
+    'standard',
+    // 'plugin:vue/vue3-essential',
+    'plugin:vue/recommended', // Priority C: Recommended (Minimizing Arbitrary Choices and Cognitive Overhead)
     '@vue/standard',
     '@vue/typescript/recommended'
   ],
@@ -12,7 +14,7 @@ module.exports = {
     ecmaVersion: 2020
   },
   rules: {
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off'
+    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn'
   }
 }
